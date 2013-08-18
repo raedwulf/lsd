@@ -1,14 +1,18 @@
 CC = cc
 CFLAGS = -std=gnu11 -O3 -I.
 
+PREFIX    ?= /usr/local
+BINPREFIX  = $(PREFIX)/bin
+
 LIBS=-lm
 ARCH=$(uname -m)
 
 ## TODO: must write the main LSD daemon
 # DEPS =
 # OBJ = battery.o clock.o cpu.o memory.o thermal.o wifi.o
+BINS = battery clock memory thermal wifi
 
-all: battery clock memory thermal wifi
+all: $(BINS)
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
@@ -28,7 +32,14 @@ thermal: thermal.o
 wifi: wifi.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
+install:
+	mkdir -p "$(DESTDIR)$(BINPREFIX)"
+	cp -p $(BINS) "$(DESTDIR)$(BINPREFIX)"
+
+uninstall:
+	rm -f "$(DESTDIR)$(BINPREFIX)"/{$(BINS)}
+
 .PHONY: clean
 
 clean:
-	rm -f *.o
+	rm -f *.o $(BINS)
