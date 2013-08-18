@@ -1,38 +1,34 @@
-CC      ?= gcc
-LIBS     = -lm
-CFLAGS  += -std=c99 -pedantic -Wall -Wextra -I$(PREFIX)/include
-CFLAGS  += -D_POSIX_C_SOURCE=200112L
-LDFLAGS += -L$(PREFIX)/lib
+CC = cc
+CFLAGS = -std=gnu11 -O3 -I.
 
-PREFIX    ?= /usr/local
-BINPREFIX  = $(PREFIX)/bin
+LIBS=-lm
+ARCH=$(uname -m)
 
-SRC = $(wildcard *.c)
-BIN = $(basename $(SRC))
+## TODO: must write the main LSD daemon
+# DEPS =
+# OBJ = battery.o clock.o cpu.o memory.o thermal.o wifi.o
 
-comma  = ,
-empty  =
-space  = $(empty) $(empty)
-BINLST = $(subst $(space),$(comma),$(BIN))
+all: battery clock memory thermal wifi
 
-all: CFLAGS += -Os
-all: LDFLAGS += -s
-all: $(BIN)
+%.o: %.c $(DEPS)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
-debug: CFLAGS += -O0 -g -DDEBUG
-debug: $(BIN)
+battery: battery.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-$(BIN): Makefile
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LIBS) -o $@ $@.c
+clock: clock.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-install:
-	mkdir -p "$(DESTDIR)$(BINPREFIX)"
-	cp -p $(BIN) "$(DESTDIR)$(BINPREFIX)"
+memory: memory.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-uninstall:
-	rm -f "$(DESTDIR)$(BINPREFIX)"/{$(BINLST)}
+thermal: thermal.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+wifi: wifi.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+.PHONY: clean
 
 clean:
-	rm -f $(BIN)
-
-.PHONY: all debug clean install uninstall
+	rm -f *.o
