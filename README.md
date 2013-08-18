@@ -1,7 +1,7 @@
 LSD - Little Status Daemons
 ===========================
 
-Tai Chi Minh Ralph Eastwood <tcmreastwood@gmail.com>
+Tai Chi Minh Ralph Eastwood -- <tcmreastwood@gmail.com>
 
 Description
 -----------
