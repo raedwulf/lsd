@@ -37,7 +37,7 @@ void wifi_info(int fd, const char *interface)
 	strcpy(request.ifr_name, interface);
 	request.u.data.pointer = &stats;
 	request.u.data.length = sizeof(struct iw_statistics);
-	if (ioctl(fd, SIOCGIWSTATS, request) == -1) {
+	if (ioctl(fd, SIOCGIWSTATS, &request) == -1) {
 		perror("ioctl SIOCGIWSTATS");
 		exit(EXIT_FAILURE);
 	}
