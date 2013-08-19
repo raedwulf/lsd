@@ -112,9 +112,12 @@ int main(int argc, char *argv[])
 
 	char *p = format;
 	int hasc = 0;
-	while (*p) hasc += (*p++ == '%');
+	while (*p)
+		if (*p++ == '%') {
+			if (*p == '%') p++; else hasc++;
+		}
 	if (hasc == 0 || hasc > 2)
-		fputs("Invalid format.", stderr);
+		fprintf(stderr, "Invalid format.\n");
 
 	if (snoop)
 		while ((exit_code = cpu_info(prefix, format, avg, (hasc-1), delimeter))
