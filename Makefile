@@ -10,7 +10,7 @@ ARCH=$(uname -m)
 ## TODO: must write the main LSD daemon
 # DEPS =
 # OBJ = battery.o clock.o cpu.o memory.o thermal.o wifi.o
-BINS = battery clock cpu memory thermal wifi
+BINS = battery clock cpu memory disk thermal wifi
 
 all: $(BINS)
 
@@ -27,6 +27,9 @@ clock: clock.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 memory: memory.o
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+
+disk: disk.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 thermal: thermal.o
