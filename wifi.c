@@ -22,14 +22,27 @@ static int max_qual = 0;
 
 void wifi_info(int fd, const char *interface)
 {
-	struct iwreq request;
+	struct iwreq request;	
+
+	if (max_qual == 0) {
+		struct iw_range range;
+		memset(&request, 0, sizeof(struct iwreq));
+		strcpy(request.ifr_name, interface);
+		request.u.data.pointer = &range;
+		request.u.data.length = sizeof(range);
+		if (ioctl(fd, SIOCGIWRANGE, request) == -1) {
+			perror("ioctl SIOCGIWRANGE");
+		}
+		max_qual = range.max_qual.qual;
+	}
+
 	memset(&request, 0, sizeof(struct iwreq));
 	strcpy(request.ifr_name, interface);
 	request.u.essid.pointer = name;
 	request.u.essid.length = IW_ESSID_MAX_SIZE + 1;
 	if (ioctl(fd, SIOCGIWESSID, &request) == -1) {
+		strcpy(name, "ERROR");
 		perror("ioctl SIOCGIWESSID");
-		exit(EXIT_FAILURE);
 	}
 
 	struct iw_statistics stats;
@@ -39,7 +52,6 @@ void wifi_info(int fd, const char *interface)
 	request.u.data.length = sizeof(struct iw_statistics);
 	if (ioctl(fd, SIOCGIWSTATS, &request) == -1) {
 		perror("ioctl SIOCGIWSTATS");
-		exit(EXIT_FAILURE);
 	}
 	int q = (100*stats.qual.qual) / max_qual;
 	printf(format, name, q);
@@ -80,18 +92,6 @@ int main(int argc, char *argv[])
 		perror("socket");
 		exit(EXIT_FAILURE);
 	}
-
-	struct iwreq request;	
-	struct iw_range range;
-	memset(&request, 0, sizeof(struct iwreq));
-	strcpy(request.ifr_name, interface);
-	request.u.data.pointer = &range;
-	request.u.data.length = sizeof(range);
-	if (ioctl(fd, SIOCGIWRANGE, request) == -1) {
-		perror("ioctl SIOCGIWRANGE");
-		exit(EXIT_FAILURE);
-	}
-	max_qual = range.max_qual.qual;
 
 	if (snoop)
 		while (true) {
