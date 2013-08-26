@@ -51,6 +51,7 @@ int disk_info(const char *path, const char *format, int format_type, bool has_st
 		break;
 	}
 	putchar('\n');
+	fflush(stdout);
 	return EXIT_SUCCESS;
 }
 
