@@ -32,7 +32,7 @@ int disk_info(const char *path, const char *format, int format_type, bool has_st
 		printf(format, (s.f_bavail * 100) / s.f_blocks);
 		break;
 	case DISK_FREE_SPACE_REMAINING:
-		size = (double)(s.f_blocks * s.f_bsize);
+		size = (double)(s.f_bavail * s.f_bsize);
 		mib_size = size / (double)(1 << 20);		
 		gib_size = size / (double)(1 << 30);
 		if (has_string)
@@ -42,7 +42,7 @@ int disk_info(const char *path, const char *format, int format_type, bool has_st
 			printf(format, gib_size < 1.0 ? mib_size : gib_size);
 		break;
 	case DISK_FREE_SPACE_OVER_ALL:
-		size = ((double)s.f_blocks * s.f_bsize) / (double)(1 << 30);
+		size = ((double)s.f_bavail * s.f_bsize) / (double)(1 << 30);
 		gib_size = ((double)s.f_bavail * s.f_bsize) / (double)(1 << 30);
 		if (has_string)
 			printf(format, gib_size, size, "GiB");
@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
 					in_format = false;
 				}
 				break;
+			case 'f':
 			case 'g':
 				if (in_format) {
 					if (format_type == -1)
