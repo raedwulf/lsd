@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
 	while ((opt = getopt(argc, argv, "hsd:p:f:i:")) != -1) {
 		switch (opt) {
 		case 'h':
-			printf("cpu [-h|-s|-a|-d DELIMETER|-p PREFIX|-f FORMAT|-i INTERVAL]\n");
+			printf("thermal [-h|-s|-d DELIMETER|-p PREFIX|-f FORMAT|-i INTERVAL]\n");
 			return EXIT_SUCCESS;
 		case 'd':
 			delimeter = optarg;
