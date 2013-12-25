@@ -14,39 +14,52 @@
 #define STATUS_KEY    KEY_PREFIX "STATUS"
 #define CAPACITY_KEY  KEY_PREFIX "CAPACITY"
 
-int bat_info(char *path, char *format)
-{
-	FILE *bf = fopen(path, "r");
-	if (bf == NULL) {
-		fprintf(stderr, "Can't open '%s'.\n", path);
-		return EXIT_FAILURE;
-	}
+#define CHARGING      "\u26A1"
+#define WIRED         "\u2607"
+#define BATTERY       "\U0001F50B"
+#define UNKNOWN       "\uFFFD"
 
-	char line[MAXLEN] = {0};
+int bat_info(char *path, char *format, bool emoji)
+{
 	char status[MAXLEN] = {0};
-	int capacity = -1;
 	bool found_status = false, found_capacity = false;
-	while (fgets(line, sizeof(line), bf) != NULL) {
-		char *key = strtok(line, TOKSEP);
-		if (key != NULL) {
-			if (!found_status && strcmp(key, STATUS_KEY) == 0) {
-				strncpy(status, strtok(NULL, TOKSEP), sizeof(status));
-				found_status = true;
-			} else if (capacity == -1 && strcmp(key, CAPACITY_KEY) == 0) {
-				capacity = atoi(strtok(NULL, TOKSEP));
-				found_capacity = true;
+	int capacity = -1;
+	FILE *bf = fopen(path, "r");
+	if (bf) {
+		char line[MAXLEN] = {0};
+		while (fgets(line, sizeof(line), bf) != NULL) {
+			char *key = strtok(line, TOKSEP);
+			if (key != NULL) {
+				if (!found_status && strcmp(key, STATUS_KEY) == 0) {
+					strncpy(status, strtok(NULL, TOKSEP), sizeof(status));
+					found_status = true;
+				} else if (capacity == -1 && strcmp(key, CAPACITY_KEY) == 0) {
+					capacity = atoi(strtok(NULL, TOKSEP));
+					found_capacity = true;
+				}
 			}
 		}
-	}
-	fclose(bf);
-	if (!found_capacity || !found_status) {
-		fprintf(stderr, "The battery informations are missing.\n");
-		return EXIT_FAILURE;
+		fclose(bf);
 	} else {
-		printf(format, status, capacity);
-		printf("\n");
-		fflush(stdout);
+		fprintf(stderr, "Can't open '%s'.\n", path);
 	}
+	char *s = status;
+	if (!found_capacity || !found_status) {
+		s = emoji ? WIRED : "Wired";
+		capacity = 100;
+	} else if (emoji) {
+		if (!strcmp(status, "Charging"))
+			s = CHARGING;
+		else if (!strcmp(status, "Full"))
+			s = WIRED;
+		else if (!strcmp(status, "Discharging"))
+			s = BATTERY;
+		else
+			s = UNKNOWN;
+	}
+	printf(format, s, capacity);
+	printf("\n");
+	fflush(stdout);
 	return EXIT_SUCCESS;
 }
 
@@ -57,12 +70,13 @@ int main(int argc, char *argv[])
 	int index = BAT_INDEX;
 	int interval = INTERVAL;
 	bool snoop = false;
+	bool emoji = false;
 
 	char opt;
-	while ((opt = getopt(argc, argv, "hsf:i:p:n:")) != -1) {
+	while ((opt = getopt(argc, argv, "hsef:i:p:n:")) != -1) {
 		switch (opt) {
 		case 'h':
-			printf("battery [-h|-s|-f FORMAT|-i INTERVAL|-p PATH|-n INDEX]\n");
+			printf("battery [-h|-s|-e|-f FORMAT|-i INTERVAL|-p PATH|-n INDEX]\n");
 			exit(EXIT_SUCCESS);
 			break;
 		case 's':
@@ -80,6 +94,9 @@ int main(int argc, char *argv[])
 		case 'n':
 			index = atoi(optarg);
 			break;
+		case 'e':
+			emoji = true;
+			break;
 		}
 	}
 
@@ -89,10 +106,10 @@ int main(int argc, char *argv[])
 	int exit_code;
 
 	if (snoop)
-		while ((exit_code = bat_info(real_path, format)) != EXIT_FAILURE)
+		while ((exit_code = bat_info(real_path, format, emoji)) != EXIT_FAILURE)
 			sleep(interval);
 	else
-		exit_code = bat_info(real_path, format);
+		exit_code = bat_info(real_path, format, emoji);
 
 	return exit_code;
 }
