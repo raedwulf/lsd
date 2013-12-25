@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 	while ((opt = getopt(argc, argv, "hsf:i:w:")) != -1) {
 		switch (opt) {
 		case 'h':
-			printf("essid [-h|-s|-i INTERVAL|-f FORMAT|-w INTERFACE]\n");
+			printf("wifi [-h|-s|-i INTERVAL|-f FORMAT|-w INTERFACE]\n");
 			exit(EXIT_SUCCESS);
 			break;
 		case 'i':
