@@ -29,16 +29,18 @@ void network_info(int fd, const char *wifi_interface, const char *eth_interface)
 	strncat(path, eth_interface, sizeof(path) - strlen(path) - sizeof("/carrier"));
 	strcat(path, "/carrier"); 
 	FILE *f = fopen(path, "r");
-	int c;
-	if ((c = fgetc(f)) != EOF) {
-		printf(format, "wired", c - '0');
-		putchar('\n');
-	} else
-		perror("no network information");
-	fclose(f);
-
-	if (c == '1')
-		return;
+	if (f) {
+		int c;
+		if ((c = fgetc(f)) != EOF) {
+			printf(format, "wired", c - '0');
+			putchar('\n');
+			fflush(stdout);
+		} else
+			perror("no network information");
+		fclose(f);
+		if (c == '1')
+			return;
+	}
 
 	if (max_qual == 0) {
 		struct iw_range range;
