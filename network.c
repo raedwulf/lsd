@@ -16,15 +16,17 @@
 #define ETH_INTERFACE  "eth0"
 #define FORMAT     "%s %d"
 
+#define DIV_ROUND(n, d) (((n < 0) ^ (d < 0)) ? ((n - (d>>1))/d) : ((n + (d>>1))/d))
+
+static char *strength[] = { "\u2582", "\u2584", "\u2586", "\u2588" };
+
 static char *format = FORMAT;
 static int interval = INTERVAL;
 static char name[IW_ESSID_MAX_SIZE + 1] = {0};
 static int max_qual = 0;
 
-void network_info(int fd, const char *wifi_interface, const char *eth_interface)
+void network_info(int fd, const char *wifi_interface, const char *eth_interface, bool xtended)
 {
-	struct iwreq request;	
-
 	char path[256] = "/sys/class/net/";
 	strncat(path, eth_interface, sizeof(path) - strlen(path) - sizeof("/carrier"));
 	strcat(path, "/carrier"); 
@@ -42,6 +44,8 @@ void network_info(int fd, const char *wifi_interface, const char *eth_interface)
 			return;
 	}
 
+	bool failed = false;
+	struct iwreq request;	
 	if (max_qual == 0) {
 		struct iw_range range;
 		memset(&request, 0, sizeof(struct iwreq));
@@ -50,6 +54,7 @@ void network_info(int fd, const char *wifi_interface, const char *eth_interface)
 		request.u.data.length = sizeof(range);
 		if (ioctl(fd, SIOCGIWRANGE, request) == -1) {
 			perror("ioctl SIOCGIWRANGE");
+			failed = true;
 		}
 		max_qual = range.max_qual.qual;
 	}
@@ -61,6 +66,7 @@ void network_info(int fd, const char *wifi_interface, const char *eth_interface)
 	if (ioctl(fd, SIOCGIWESSID, &request) == -1) {
 		strcpy(name, "ERROR");
 		perror("ioctl SIOCGIWESSID");
+		failed = true;
 	}
 
 	struct iw_statistics stats;
@@ -70,9 +76,25 @@ void network_info(int fd, const char *wifi_interface, const char *eth_interface)
 	request.u.data.length = sizeof(struct iw_statistics);
 	if (ioctl(fd, SIOCGIWSTATS, &request) == -1) {
 		perror("ioctl SIOCGIWSTATS");
+		failed = true;
 	}
-	int q = (100*stats.qual.qual) / max_qual;
-	printf(format, name, q);
+
+	int q = 0;
+	strcpy(path, "unknown");
+	if (!failed) {
+		q = (100*stats.qual.qual) / max_qual;
+
+		strncpy(path, name, sizeof(path) - 1); path[sizeof(path)-1] = '\0';
+		if (xtended) {
+			int s = DIV_ROUND(q, 25);
+			strncat(path, " ", sizeof(path) - strlen(path) - 1);
+			for (int i = 0; i < s; i++)
+				strncat(path, strength[i], sizeof(path) - strlen(path) - 1);
+			for (int i = s; s < 4; i++)
+				strncat(path, " ", sizeof(path) - strlen(path) - 1);
+		}
+	}
+	printf(format, path, q);
 	putchar('\n');
 	fflush(stdout);
 }
@@ -82,9 +104,10 @@ int main(int argc, char *argv[])
 	char *wifi_interface = WIFI_INTERFACE;
 	char *eth_interface = ETH_INTERFACE;
 	bool snoop = false;
+	bool xtended = false;
 
 	char opt;
-	while ((opt = getopt(argc, argv, "hsf:i:w:e:")) != -1) {
+	while ((opt = getopt(argc, argv, "hsxf:i:w:e:")) != -1) {
 		switch (opt) {
 		case 'h':
 			printf("network [-h|-s|-i INTERVAL|-f FORMAT|-w WIFI_INTERFACE|-e ETH_INTERFACE]\n");
@@ -105,6 +128,9 @@ int main(int argc, char *argv[])
 		case 'e':
 			eth_interface = optarg;
 			break;
+		case 'x':
+			xtended = true;
+			break;
 		}
 	}
 
@@ -117,12 +143,12 @@ int main(int argc, char *argv[])
 
 	if (snoop)
 		while (true) {
-			network_info(fd, wifi_interface, eth_interface);
+			network_info(fd, wifi_interface, eth_interface, xtended);
 			sleep(interval);
 			name[0] = '\0';
 		}
 	else
-		network_info(fd, wifi_interface, eth_interface);
+		network_info(fd, wifi_interface, eth_interface, xtended);
 
 	close(fd);
 	if (strlen(name) > 0)
