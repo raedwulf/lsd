@@ -9,8 +9,8 @@ ARCH=$(uname -m)
 
 ## TODO: must write the main LSD daemon
 # DEPS =
-# OBJ = battery.o clock.o cpu.o memory.o thermal.o wifi.o
-BINS = battery clock cpu memory disk thermal wifi
+# OBJ = battery.o clock.o cpu.o memory.o thermal.o network.o
+BINS = battery clock cpu memory disk thermal network
 
 all: $(BINS)
 
@@ -35,7 +35,7 @@ disk: disk.o
 thermal: thermal.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-wifi: wifi.o
+network: network.o
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 install:

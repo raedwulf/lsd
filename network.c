@@ -12,7 +12,8 @@
 #include <linux/wireless.h>
 
 #define INTERVAL   5
-#define INTERFACE  "wlan0"
+#define WIFI_INTERFACE "wlan0"
+#define ETH_INTERFACE  "eth0"
 #define FORMAT     "%s %d"
 
 static char *format = FORMAT;
@@ -20,14 +21,29 @@ static int interval = INTERVAL;
 static char name[IW_ESSID_MAX_SIZE + 1] = {0};
 static int max_qual = 0;
 
-void wifi_info(int fd, const char *interface)
+void network_info(int fd, const char *wifi_interface, const char *eth_interface)
 {
 	struct iwreq request;	
+
+	char path[256] = "/sys/class/net/";
+	strncat(path, eth_interface, sizeof(path) - strlen(path) - sizeof("/carrier"));
+	strcat(path, "/carrier"); 
+	FILE *f = fopen(path, "r");
+	int c;
+	if ((c = fgetc(f)) != EOF) {
+		printf(format, "wired", c - '0');
+		putchar('\n');
+	} else
+		perror("no network information");
+	fclose(f);
+
+	if (c == '1')
+		return;
 
 	if (max_qual == 0) {
 		struct iw_range range;
 		memset(&request, 0, sizeof(struct iwreq));
-		strcpy(request.ifr_name, interface);
+		strcpy(request.ifr_name, wifi_interface);
 		request.u.data.pointer = &range;
 		request.u.data.length = sizeof(range);
 		if (ioctl(fd, SIOCGIWRANGE, request) == -1) {
@@ -37,7 +53,7 @@ void wifi_info(int fd, const char *interface)
 	}
 
 	memset(&request, 0, sizeof(struct iwreq));
-	strcpy(request.ifr_name, interface);
+	strcpy(request.ifr_name, wifi_interface);
 	request.u.essid.pointer = name;
 	request.u.essid.length = IW_ESSID_MAX_SIZE + 1;
 	if (ioctl(fd, SIOCGIWESSID, &request) == -1) {
@@ -47,7 +63,7 @@ void wifi_info(int fd, const char *interface)
 
 	struct iw_statistics stats;
 	memset(&request, 0, sizeof(struct iwreq));
-	strcpy(request.ifr_name, interface);
+	strcpy(request.ifr_name, wifi_interface);
 	request.u.data.pointer = &stats;
 	request.u.data.length = sizeof(struct iw_statistics);
 	if (ioctl(fd, SIOCGIWSTATS, &request) == -1) {
@@ -61,14 +77,15 @@ void wifi_info(int fd, const char *interface)
 
 int main(int argc, char *argv[])
 {
-	char *interface = INTERFACE;
+	char *wifi_interface = WIFI_INTERFACE;
+	char *eth_interface = ETH_INTERFACE;
 	bool snoop = false;
 
 	char opt;
-	while ((opt = getopt(argc, argv, "hsf:i:w:")) != -1) {
+	while ((opt = getopt(argc, argv, "hsf:i:w:e:")) != -1) {
 		switch (opt) {
 		case 'h':
-			printf("wifi [-h|-s|-i INTERVAL|-f FORMAT|-w INTERFACE]\n");
+			printf("network [-h|-s|-i INTERVAL|-f FORMAT|-w WIFI_INTERFACE|-e ETH_INTERFACE]\n");
 			exit(EXIT_SUCCESS);
 			break;
 		case 'i':
@@ -81,7 +98,10 @@ int main(int argc, char *argv[])
 			format = optarg;
 			break;
 		case 'w':
-			interface = optarg;
+			wifi_interface = optarg;
+			break;
+		case 'e':
+			eth_interface = optarg;
 			break;
 		}
 	}
@@ -95,12 +115,12 @@ int main(int argc, char *argv[])
 
 	if (snoop)
 		while (true) {
-			wifi_info(fd, interface);
+			network_info(fd, wifi_interface, eth_interface);
 			sleep(interval);
 			name[0] = '\0';
 		}
 	else
-		wifi_info(fd, interface);
+		network_info(fd, wifi_interface, eth_interface);
 
 	close(fd);
 	if (strlen(name) > 0)
