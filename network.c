@@ -27,6 +27,7 @@ static int max_qual = 0;
 
 void network_info(int fd, const char *wifi_interface, const char *eth_interface, bool xtended)
 {
+	bool has_wired = false;
 	char path[256] = "/sys/class/net/";
 	strncat(path, eth_interface, sizeof(path) - strlen(path) - sizeof("/carrier"));
 	strcat(path, "/carrier"); 
@@ -34,17 +35,20 @@ void network_info(int fd, const char *wifi_interface, const char *eth_interface,
 	if (f) {
 		int c;
 		if ((c = fgetc(f)) != EOF) {
-			if (xtended)
-				printf(format, WIRED, "wired", c - '0');
-			else
-				printf(format, "wired", c - '0');
-			putchar('\n');
-			fflush(stdout);
+			has_wired = (c == '1');
 		} else
 			perror("no network information");
 		fclose(f);
 		if (c == '1')
 			return;
+	}
+
+	if (has_wired) {
+		if (xtended)
+			printf(format, WIRED, "wired", 100);
+		else
+			printf(format, "wired", 100);
+		goto finish;
 	}
 
 	bool failed = false;
@@ -82,25 +86,28 @@ void network_info(int fd, const char *wifi_interface, const char *eth_interface,
 		failed = true;
 	}
 
-	int q = 0;
-	if (failed)
-		strcpy(path, "unknown");
-	else {
-		q = (100*stats.qual.qual) / max_qual;
-		path[0] = '\0';
-		if (xtended) {
-			int s = q / 25 + ((q % 25) > 12);
-			for (int i = 0; i < s; i++)
-				strncat(path, strength[i], sizeof(path) - strlen(path) - 1);
-			for (int i = s; i < 4; i++)
-				strncat(path, " ", sizeof(path) - strlen(path) - 1);
-			printf(format, path, name, q);
-			putchar('\n');
-			fflush(stdout);
-			return;
-		}
+	if (failed) {
+		if (xtended)
+			printf(format, "X", "disconnected", 0);
+		else
+			printf(format, "disconnected", 0);
+		goto finish;
 	}
-	printf(format, path, q);
+
+	int q = (100*stats.qual.qual) / max_qual;
+	if (xtended) {
+		path[0] = '\0';
+		int s = q / 25 + ((q % 25) > 12);
+		for (int i = 0; i < s; i++)
+			strncat(path, strength[i], sizeof(path) - strlen(path) - 1);
+		for (int i = s; i < 4; i++)
+			strncat(path, " ", sizeof(path) - strlen(path) - 1);
+		printf(format, path, name, q);
+	} else {
+		printf(format, name, q);
+	}
+
+finish:
 	putchar('\n');
 	fflush(stdout);
 }
