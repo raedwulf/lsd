@@ -11,12 +11,12 @@
 #include <errno.h>
 #include <linux/wireless.h>
 
-#define INTERVAL   5
+#define INTERVAL       5
 #define WIFI_INTERFACE "wlan0"
 #define ETH_INTERFACE  "eth0"
-#define FORMAT     "%s %d"
-
-#define DIV_ROUND(n, d) (((n < 0) ^ (d < 0)) ? ((n - (d>>1))/d) : ((n + (d>>1))/d))
+#define FORMAT         "%s %d"
+#define XFORMAT        "%s %s %d"
+#define WIRED          "\U0001F50C"
 
 static char *strength[] = { "\u2582", "\u2584", "\u2586", "\u2588" };
 
@@ -34,7 +34,10 @@ void network_info(int fd, const char *wifi_interface, const char *eth_interface,
 	if (f) {
 		int c;
 		if ((c = fgetc(f)) != EOF) {
-			printf(format, "wired", c - '0');
+			if (xtended)
+				printf(format, WIRED, "wired", c - '0');
+			else
+				printf(format, "wired", c - '0');
 			putchar('\n');
 			fflush(stdout);
 		} else
@@ -80,18 +83,21 @@ void network_info(int fd, const char *wifi_interface, const char *eth_interface,
 	}
 
 	int q = 0;
-	strcpy(path, "unknown");
-	if (!failed) {
+	if (failed)
+		strcpy(path, "unknown");
+	else {
 		q = (100*stats.qual.qual) / max_qual;
-
-		strncpy(path, name, sizeof(path) - 1); path[sizeof(path)-1] = '\0';
+		path[0] = '\0';
 		if (xtended) {
-			int s = DIV_ROUND(q, 25);
-			strncat(path, " ", sizeof(path) - strlen(path) - 1);
+			int s = q / 25 + ((q % 25) > 12);
 			for (int i = 0; i < s; i++)
 				strncat(path, strength[i], sizeof(path) - strlen(path) - 1);
-			for (int i = s; s < 4; i++)
+			for (int i = s; i < 4; i++)
 				strncat(path, " ", sizeof(path) - strlen(path) - 1);
+			printf(format, path, name, q);
+			putchar('\n');
+			fflush(stdout);
+			return;
 		}
 	}
 	printf(format, path, q);
@@ -130,6 +136,7 @@ int main(int argc, char *argv[])
 			break;
 		case 'x':
 			xtended = true;
+			format = XFORMAT;
 			break;
 		}
 	}
