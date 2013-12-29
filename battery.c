@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
 	bool snoop = false;
 	bool emoji = false;
 
-	char opt;
+	int opt;
 	while ((opt = getopt(argc, argv, "hsef:i:p:n:")) != -1) {
 		switch (opt) {
 		case 'h':

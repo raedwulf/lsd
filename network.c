@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 	bool snoop = false;
 	bool xtended = false;
 
-	char opt;
+	int opt;
 	while ((opt = getopt(argc, argv, "hsxf:i:w:e:")) != -1) {
 		switch (opt) {
 		case 'h':

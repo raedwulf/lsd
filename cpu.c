@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
 	const char *delimeter = DELIMETER;
 	const char *prefix = PREFIX;
 
-	char opt;
+	int opt;
 	while ((opt = getopt(argc, argv, "hscad:p:f:i:")) != -1) {
 		switch (opt) {
 		case 'h':
