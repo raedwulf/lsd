@@ -19,7 +19,7 @@
 #define BATTERY       "\U0001F50B"
 #define UNKNOWN       "\uFFFD"
 
-int bat_info(char *path, char *format, bool emoji)
+int bat_info(char *path, char *format, bool emoji, bool quiet)
 {
 	char status[MAXLEN] = {0};
 	bool found_status = false, found_capacity = false;
@@ -41,7 +41,8 @@ int bat_info(char *path, char *format, bool emoji)
 		}
 		fclose(bf);
 	} else {
-		fprintf(stderr, "Can't open '%s'.\n", path);
+		if (!quiet)
+			fprintf(stderr, "Can't open '%s'.\n", path);
 	}
 	char *s = status;
 	if (!found_capacity || !found_status) {
@@ -71,12 +72,13 @@ int main(int argc, char *argv[])
 	int interval = INTERVAL;
 	bool snoop = false;
 	bool emoji = false;
+	bool quiet = false;
 
 	int opt;
 	while ((opt = getopt(argc, argv, "hsef:i:p:n:")) != -1) {
 		switch (opt) {
 		case 'h':
-			printf("battery [-h|-s|-e|-f FORMAT|-i INTERVAL|-p PATH|-n INDEX]\n");
+			printf("battery [-h|-s|-e|-q|-f FORMAT|-i INTERVAL|-p PATH|-n INDEX]\n");
 			exit(EXIT_SUCCESS);
 			break;
 		case 's':
@@ -97,6 +99,9 @@ int main(int argc, char *argv[])
 		case 'e':
 			emoji = true;
 			break;
+		case 'q':
+			quiet = true;
+			break;
 		}
 	}
 
@@ -106,10 +111,10 @@ int main(int argc, char *argv[])
 	int exit_code;
 
 	if (snoop)
-		while ((exit_code = bat_info(real_path, format, emoji)) != EXIT_FAILURE)
+		while ((exit_code = bat_info(real_path, format, emoji, quiet)) != EXIT_FAILURE)
 			sleep(interval);
 	else
-		exit_code = bat_info(real_path, format, emoji);
+		exit_code = bat_info(real_path, format, emoji, quiet);
 
 	return exit_code;
 }
