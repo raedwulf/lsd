@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 	bool quiet = false;
 
 	int opt;
-	while ((opt = getopt(argc, argv, "hsef:i:p:n:")) != -1) {
+	while ((opt = getopt(argc, argv, "hseqf:i:p:n:")) != -1) {
 		switch (opt) {
 		case 'h':
 			printf("battery [-h|-s|-e|-q|-f FORMAT|-i INTERVAL|-p PATH|-n INDEX]\n");
