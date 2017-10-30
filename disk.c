@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
 	bool snoop = false;
 
 	int opt;
-	while ((opt = getopt(argc, argv, "hsf:i:w:")) != -1) {
+	while ((opt = getopt(argc, argv, "hsf:i:w:p:")) != -1) {
 		switch (opt) {
 		case 'h':
 			printf("disk [-h|-s|-i INTERVAL|-f FORMAT|-p PATH]\n");
